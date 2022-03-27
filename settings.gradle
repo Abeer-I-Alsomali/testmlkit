@@ -9,3 +9,4 @@ dependencyResolutionManagement {
 rootProject.name = "Listing"
 include ':app'
 include ':openCVLibrary3416'
+include ':openCVLibrary3416'

@@ -42,13 +42,7 @@ android {
     }
     buildToolsVersion '30.0.0'
     compileSdkVersion 30
-    sourceSets {
-        main {
-            jni {
-                srcDirs 'src\\main\\jni', 'src\\main\\jniLibs', 'src\\main\\jniLib'
-            }
-        }
-    }
+
 }
 
 dependencies {

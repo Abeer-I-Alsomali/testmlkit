@@ -1,7 +1,7 @@
 package com.example.testmlkit;
 
-import androidx.appcompat.app.AppCompatActivity;
-
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 
 
@@ -23,7 +23,7 @@ import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
 import org.opencv.imgproc.Imgproc;
 
 import android.app.Activity;
-import android.os.Bundle;
+
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -31,6 +31,9 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.view.View.OnTouchListener;
 import android.view.SurfaceView;
+
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 public class opencvtest extends Activity implements OnTouchListener, CvCameraViewListener2 {
     private static final String  TAG              = "opencvtest";
@@ -77,6 +80,9 @@ public class opencvtest extends Activity implements OnTouchListener, CvCameraVie
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         setContentView(R.layout.activity_opencvtest);
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+                == PackageManager.PERMISSION_DENIED)
+            ActivityCompat.requestPermissions(this, new String[] {Manifest.permission.CAMERA}, 01);
 
         mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.color_blob_detection_activity_surface_view);
         mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
