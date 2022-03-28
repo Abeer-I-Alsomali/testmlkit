@@ -1,16 +1,30 @@
 package com.example.testmlkit;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.MotionEvent;
+import android.view.SurfaceView;
+import android.view.View;
+import android.view.View.OnTouchListener;
+import android.view.Window;
+import android.view.WindowManager;
 
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
-import java.util.List;
-
+import org.jetbrains.annotations.NotNull;
 import org.opencv.android.BaseLoaderCallback;
+import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewFrame;
+import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
+import org.opencv.android.Utils;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
@@ -18,22 +32,11 @@ import org.opencv.core.MatOfPoint;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
-import org.opencv.android.CameraBridgeViewBase;
-import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
 import org.opencv.imgproc.Imgproc;
 
-import android.app.Activity;
+import java.util.HashMap;
+import java.util.List;
 
-import android.util.Log;
-import android.view.MotionEvent;
-import android.view.View;
-import android.view.Window;
-import android.view.WindowManager;
-import android.view.View.OnTouchListener;
-import android.view.SurfaceView;
-
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 
 public class opencvtest extends Activity implements OnTouchListener, CvCameraViewListener2 {
     private static final String  TAG              = "opencvtest";
@@ -47,6 +50,7 @@ public class opencvtest extends Activity implements OnTouchListener, CvCameraVie
     private Size                 SPECTRUM_SIZE;
     private Scalar               CONTOUR_COLOR;
 
+    private HashMap<String, Scalar> THRESHOLDS = new HashMap<String, Scalar> ();
     private CameraBridgeViewBase mOpenCvCameraView;
 
     private BaseLoaderCallback  mLoaderCallback = new BaseLoaderCallback(this) {
@@ -69,6 +73,9 @@ public class opencvtest extends Activity implements OnTouchListener, CvCameraVie
 
     public opencvtest() {
         Log.i(TAG, "Instantiated new " + this.getClass());
+        THRESHOLDS.put("low_green", new Scalar(25,52,72));
+        THRESHOLDS.put("high_green", new Scalar(102, 255,255));
+
     }
 
     /** Called when the activity is first created. */
@@ -157,8 +164,13 @@ public class opencvtest extends Activity implements OnTouchListener, CvCameraVie
         Mat touchedRegionHsv = new Mat();
         Imgproc.cvtColor(touchedRegionRgba, touchedRegionHsv, Imgproc.COLOR_RGB2HSV_FULL);
 
-        // Calculate average color of touched region
+       //  Calculate average color of touched region
         mBlobColorHsv = Core.sumElems(touchedRegionHsv);
+
+
+        System.out.println("check11");
+        System.out.println(mBlobColorHsv);
+
         int pointCount = touchedRect.width*touchedRect.height;
         for (int i = 0; i < mBlobColorHsv.val.length; i++)
             mBlobColorHsv.val[i] /= pointCount;
@@ -169,22 +181,26 @@ public class opencvtest extends Activity implements OnTouchListener, CvCameraVie
                 ", " + mBlobColorRgba.val[2] + ", " + mBlobColorRgba.val[3] + ")");
 
         mDetector.setHsvColor(mBlobColorHsv);
-
+        Log.i("color",classify(mBlobColorHsv));
         Imgproc.resize(mDetector.getSpectrum(), mSpectrum, SPECTRUM_SIZE, 0, 0, Imgproc.INTER_LINEAR_EXACT);
 
         mIsColorSelected = true;
 
         touchedRegionRgba.release();
-        touchedRegionHsv.release();
+        //touchedRegionHsv.release();
 
         return false; // don't need subsequent touch events
     }
 
     public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
-        mRgba = inputFrame.rgba();
+        Bitmap bm = BitmapFactory.decodeResource(getResources(),R.drawable.g1);
+        Mat mat=new Mat();
+        Utils.bitmapToMat(bm, mat);
+
+       mRgba = inputFrame.rgba();
 
         if (mIsColorSelected) {
-            mDetector.process(mRgba);
+            mDetector.process(mat);
             List<MatOfPoint> contours = mDetector.getContours();
             Log.e(TAG, "Contours count: " + contours.size());
             Imgproc.drawContours(mRgba, contours, -1, CONTOUR_COLOR);
@@ -205,5 +221,30 @@ public class opencvtest extends Activity implements OnTouchListener, CvCameraVie
         Imgproc.cvtColor(pointMatHsv, pointMatRgba, Imgproc.COLOR_HSV2RGB_FULL, 4);
 
         return new Scalar(pointMatRgba.get(0, 0));
+    }
+
+    public String classify(@NotNull Scalar c)
+    {
+
+        double hue = c.val[0];
+        double sat = c.val[1];
+        double lgt = c.val[2];
+
+        Log.i("color0",hue+"");
+        Log.i("color1",sat+"");
+        Log.i("color2",lgt+"");
+
+     //   if (lgt < 0.2)  return "Blacks";
+   //     if (lgt > 0.8)  return "Whites";
+///
+        ///if (sat < 0.25) return "Grays";
+
+   ///     if (hue < 30)   return "Reds";
+
+        if (hue >25)  return "Greens";
+        if (hue < 210)  return "Cyans";
+        if (hue < 270)  return "Blues";
+        if (hue < 330)  return "Magentas";
+        return "Reds";
     }
 }
